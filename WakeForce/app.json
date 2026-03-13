@@ -1,0 +1,48 @@
+{
+  "expo": {
+    "name": "WakeForce",
+    "slug": "wakeforce",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0a0a0f"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.wakeforce.app",
+      "infoPlist": {
+        "UIBackgroundModes": ["audio", "fetch", "remote-notification"],
+        "NSCameraUsageDescription": "Used to take a photo of your wake-up object to dismiss alarms",
+        "NSMicrophoneUsageDescription": "Required for camera access"
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#0a0a0f"
+      },
+      "package": "com.wakeforce.app",
+      "permissions": [
+        "CAMERA",
+        "VIBRATE",
+        "RECEIVE_BOOT_COMPLETED",
+        "SCHEDULE_EXACT_ALARM",
+        "USE_EXACT_ALARM"
+      ]
+    },
+    "plugins": [
+      [
+        "expo-notifications",
+        {
+          "sounds": ["./assets/sounds/gentle.wav", "./assets/sounds/intense.wav", "./assets/sounds/military.wav"]
+        }
+      ],
+      "expo-camera",
+      "expo-av"
+    ]
+  }
+}
