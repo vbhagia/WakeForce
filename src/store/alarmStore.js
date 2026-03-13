@@ -57,6 +57,7 @@ export function createDefaultAlarm(overrides = {}) {
     days: [1, 2, 3, 4, 5], // Mon-Fri
     enabled: true,
     soundProfile: 'intense',
+    volume: 1.0,              // 0.0–1.0, overrides profile default
     customSoundUri: null,
     remTrick: false,          // fires 90min pre-alarm too
     challenge: {

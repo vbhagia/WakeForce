@@ -91,7 +91,7 @@ export default function StatsScreen({ navigation }) {
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <Text style={styles.backBtn}>←</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>STATS</Text>
+        <Text style={styles.headerTitle}>PROGRESS</Text>
         <View style={{ width: 40 }} />
       </View>
 

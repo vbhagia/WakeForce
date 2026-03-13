@@ -1,32 +1,28 @@
-import { useAudioPlayer, useAudioPlayerStatus } from 'expo-audio';
+import { createAudioPlayer, setAudioModeAsync } from 'expo-audio';
 import * as Haptics from 'expo-haptics';
 import { SOUND_PROFILES } from '../utils/constants';
 
-/**
- * expo-audio (SDK 54) replacement for expo-av.
- * 
- * NOTE: expo-audio's useAudioPlayer is a React hook and can't be called
- * outside a component. For our use case (imperative alarm triggering),
- * we use the lower-level AudioPlayer class directly via createAudioPlayer.
- */
-
-import { createAudioPlayer, setAudioModeAsync } from 'expo-audio';
-
 let _player = null;
+let _rampInterval = null;
 let _burstTimeout = null;
 let _psychoInterval = null;
-let _rampInterval = null;
 let _currentVolume = 0;
 
-async function setupAudioSession() {
+async function createPlayer(source, volume = 1.0) {
   try {
     await setAudioModeAsync({
-      playsInSilentMode: true,       // bypass iOS mute switch
-      staysActiveInBackground: true,
-      shouldDuckAndroid: false,
+      playsInSilentMode: true,
+      shouldPlayInBackground: true,
     });
+
+    const player = createAudioPlayer(source);
+    player.loop = true;
+    player.volume = Math.min(1.0, Math.max(0, volume));
+    player.play();
+    return player;
   } catch (e) {
-    console.warn('[Audio] session setup failed:', e);
+    console.warn('[WakeForce] Audio error:', e);
+    return null;
   }
 }
 
@@ -40,14 +36,14 @@ function startBurstPattern(player, useHaptics) {
 
   function doOn() {
     if (!_player) return;
-    try { _player.play(); } catch {}
+    try { player.play(); } catch {}
     if (useHaptics) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy).catch(() => {});
     _burstTimeout = setTimeout(doOff, pattern[step % pattern.length].on);
   }
 
   function doOff() {
     if (!_player) return;
-    try { _player.pause(); } catch {}
+    try { player.pause(); } catch {}
     const off = pattern[step % pattern.length].off;
     step++;
     _burstTimeout = setTimeout(doOn, off);
@@ -61,8 +57,9 @@ function startVolumoTremolo(player, baseVolume) {
   _psychoInterval = setInterval(() => {
     if (!_player) return;
     phase += 0.05;
-    const vol = Math.min(1.0, baseVolume + Math.sin(phase) * 0.15);
-    try { _player.volume = vol; } catch {}
+    try {
+      player.volume = Math.min(1.0, Math.max(0, baseVolume + Math.sin(phase) * 0.15));
+    } catch {}
   }, 16);
 }
 
@@ -73,7 +70,7 @@ function startVolumeRamp(player, startVol, targetVol, rampSeconds) {
 
   _rampInterval = setInterval(() => {
     _currentVolume = Math.min(_currentVolume + stepSize, targetVol);
-    try { _player.volume = _currentVolume; } catch {}
+    try { player.volume = _currentVolume; } catch {}
     if (_currentVolume >= targetVol) clearInterval(_rampInterval);
   }, 500);
 }
@@ -82,11 +79,11 @@ export async function startAlarm(alarm, settings = {}) {
   await stopAlarm();
   if (!alarm) return;
 
-  await setupAudioSession();
-
   const profile = SOUND_PROFILES[alarm.soundProfile] || SOUND_PROFILES.intense;
   const useHaptics = settings.hapticFeedback !== false;
   const usePsycho = settings.psychoAudio !== false;
+  // User-set volume (0–1) scales the profile's volumes
+  const userVol = typeof alarm.volume === 'number' ? Math.min(1.0, Math.max(0, alarm.volume)) : 1.0;
 
   let source;
   if (alarm.soundProfile === 'custom' && alarm.customSoundUri) {
@@ -99,20 +96,13 @@ export async function startAlarm(alarm, settings = {}) {
     source = require('../../assets/sounds/intense.wav');
   }
 
-  try {
-    _player = createAudioPlayer(source);
-    _player.loop = true;
-    _currentVolume = profile.startVolume;
-    _player.volume = _currentVolume;
-    _player.play();
-  } catch (e) {
-    console.warn('[Audio] playback error:', e);
-    return;
-  }
+  _currentVolume = profile.startVolume * userVol;
+  _player = await createPlayer(source, _currentVolume);
+  if (!_player) return;
 
   if (profile.pattern === 'gradual') {
-    startVolumeRamp(_player, profile.startVolume, profile.targetVolume, profile.rampDuration);
-    if (usePsycho) startVolumoTremolo(_player, profile.startVolume);
+    startVolumeRamp(_player, profile.startVolume * userVol, profile.targetVolume * userVol, profile.rampDuration);
+    if (usePsycho) startVolumoTremolo(_player, profile.startVolume * userVol);
     if (useHaptics) {
       _burstTimeout = setInterval(
         () => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {}),
@@ -120,11 +110,11 @@ export async function startAlarm(alarm, settings = {}) {
       );
     }
   } else {
-    _currentVolume = 1.0;
-    try { _player.volume = 1.0; } catch {}
+    _currentVolume = userVol;
+    try { _player.volume = userVol; } catch {}
     if (usePsycho) {
       startBurstPattern(_player, useHaptics);
-      startVolumoTremolo(_player, 1.0);
+      startVolumoTremolo(_player, userVol);
     } else if (useHaptics) {
       _burstTimeout = setInterval(
         () => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy).catch(() => {}),
@@ -144,7 +134,7 @@ export async function stopAlarm() {
   _burstTimeout = null;
 
   if (_player) {
-    try { _player.pause(); _player.remove(); } catch {}
+    try { _player.remove(); } catch {}
     _player = null;
   }
   _currentVolume = 0;

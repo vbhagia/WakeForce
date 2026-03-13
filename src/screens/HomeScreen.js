@@ -7,6 +7,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { COLORS, SPACING, RADIUS } from '../utils/constants';
 import { useAlarms } from '../hooks/useAlarms';
 import { createDefaultAlarm } from '../store/alarmStore';
+import { getStats } from '../store/alarmStore';
 import { Swipeable } from 'react-native-gesture-handler';
 
 function formatTime(hour, minute) {
@@ -111,10 +112,11 @@ export default function HomeScreen({ navigation }) {
   const { alarms, load, toggle, remove } = useAlarms();
   const [toastVisible, setToastVisible] = useState(false);
   const [toastMsg, setToastMsg] = useState('');
+  const [progressStats, setProgressStats] = useState(null);
 
   useFocusEffect(useCallback(() => {
     load();
-    // Show save toast if we came back from EditAlarm with a flag
+    getStats().then(setProgressStats);
   }, [load]));
 
   // Show a toast for 2 seconds
@@ -164,7 +166,7 @@ export default function HomeScreen({ navigation }) {
         </View>
         <View style={styles.headerButtons}>
           <TouchableOpacity style={styles.iconBtn} onPress={() => navigation.navigate('Stats')}>
-            <Text style={styles.iconBtnTxt}>📊</Text>
+            <Text style={styles.iconBtnTxt}>📈</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.iconBtn} onPress={() => navigation.navigate('Settings')}>
             <Text style={styles.iconBtnTxt}>⚙️</Text>
@@ -202,6 +204,29 @@ export default function HomeScreen({ navigation }) {
                 onTest={handleTest}
               />
             ))}
+            {/* Progress summary strip — Incident 3 fix */}
+            {progressStats && progressStats.totalAlarms > 0 && (
+              <TouchableOpacity
+                style={styles.progressStrip}
+                onPress={() => navigation.navigate('Stats')}
+                activeOpacity={0.8}
+              >
+                <View style={styles.progressStripLeft}>
+                  <Text style={styles.progressStripLabel}>LAST SOLVE</Text>
+                  <Text style={styles.progressStripValue}>
+                    {progressStats.solveSessions?.[0]
+                      ? `${Math.round(progressStats.solveSessions[0].solveTime / 1000)}s`
+                      : '—'}
+                    {'  ·  '}
+                    <Text style={styles.progressDiff}>
+                      {progressStats.currentDifficulty?.charAt(0).toUpperCase() +
+                        progressStats.currentDifficulty?.slice(1) || 'Medium'}
+                    </Text>
+                  </Text>
+                </View>
+                <Text style={styles.progressStripLink}>See all progress ›</Text>
+              </TouchableOpacity>
+            )}
           </>
         )}
         <View style={{ height: 100 }} />
@@ -263,6 +288,21 @@ const styles = StyleSheet.create({
     fontSize: 11, color: COLORS.textDim, textAlign: 'center',
     marginBottom: SPACING.sm, letterSpacing: 0.5,
   },
+
+  progressStrip: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    backgroundColor: COLORS.bgCard, borderRadius: RADIUS.lg,
+    paddingHorizontal: SPACING.md, paddingVertical: SPACING.sm,
+    marginTop: SPACING.sm,
+    borderWidth: 1, borderColor: COLORS.border,
+  },
+  progressStripLeft: { gap: 2 },
+  progressStripLabel: {
+    fontSize: 10, fontWeight: '700', color: COLORS.textDim, letterSpacing: 1.5,
+  },
+  progressStripValue: { fontSize: 15, fontWeight: '600', color: COLORS.text },
+  progressDiff: { fontSize: 15, fontWeight: '400', color: COLORS.textSecondary },
+  progressStripLink: { fontSize: 13, color: COLORS.accent, fontWeight: '600' },
 
   scroll: { flex: 1 },
   scrollContent: { padding: SPACING.md },

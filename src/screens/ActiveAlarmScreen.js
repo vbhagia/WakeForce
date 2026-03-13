@@ -337,10 +337,19 @@ export default function ActiveAlarmScreen({ route, navigation }) {
       </View>
 
       <TouchableOpacity style={[styles.dismissBtn, { backgroundColor: accentColor }]} onPress={startChallenge} activeOpacity={0.85}>
-        <Text style={styles.dismissBtnTxt}>DISMISS →</Text>
+        <Text style={styles.dismissBtnTxt}>START CHALLENGE →</Text>
       </TouchableOpacity>
 
-      <Text style={styles.noSnooze}>No snooze. Solve to dismiss.</Text>
+      <View style={styles.dismissHint}>
+        <Text style={styles.dismissHintTxt}>
+          {alarm?.challenge?.type === 'photo'
+            ? 'Find and photograph the object to turn off the alarm.'
+            : alarm?.challenge?.type === 'both'
+            ? 'Solve math + take a photo to turn off the alarm.'
+            : 'Solve a math problem to turn off the alarm.'
+          }
+        </Text>
+      </View>
     </Animated.View>
   );
 }
@@ -385,6 +394,20 @@ const styles = StyleSheet.create({
     elevation: 12,
   },
   dismissBtnTxt: { fontSize: 18, fontWeight: '800', color: COLORS.white, letterSpacing: 3 },
+  dismissHint: {
+    marginTop: SPACING.md,
+    paddingHorizontal: SPACING.xl,
+    paddingVertical: SPACING.sm,
+    backgroundColor: COLORS.bgCard,
+    borderRadius: RADIUS.lg,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    maxWidth: 280,
+    alignItems: 'center',
+  },
+  dismissHintTxt: {
+    fontSize: 13, color: COLORS.textSecondary, textAlign: 'center', lineHeight: 18,
+  },
   noSnooze: { fontSize: 12, color: COLORS.textDim, marginTop: SPACING.md, letterSpacing: 1 },
 
   // Challenge phases

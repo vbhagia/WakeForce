@@ -54,6 +54,7 @@ export default function EditAlarmScreen({ route, navigation }) {
   const [showHourPicker, setShowHourPicker] = useState(false);
   const [showMinutePicker, setShowMinutePicker] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [soundExpanded, setSoundExpanded] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -193,20 +194,60 @@ export default function EditAlarmScreen({ route, navigation }) {
           />
         </View>
 
-        {/* Sound Profile */}
+        {/* Sound Profile — collapsible with always-visible summary */}
         <SectionHeader title="SOUND PROFILE" />
-        <SegmentedPicker
-          options={Object.values(SOUND_PROFILES)}
-          value={alarm.soundProfile}
-          onChange={v => update('soundProfile', v)}
-        />
-        {alarm.soundProfile === 'custom' && (
-          <TouchableOpacity style={styles.card} onPress={handlePickCustomSound}>
-            <Text style={styles.fieldLabel}>Custom Sound</Text>
-            <Text style={styles.fieldValue}>
-              {alarm.customSoundUri ? '✓ Sound selected' : 'Tap to pick audio file'}
+        <TouchableOpacity
+          style={styles.soundSummaryRow}
+          onPress={() => setSoundExpanded(e => !e)}
+          activeOpacity={0.8}
+        >
+          <Text style={styles.soundSummaryIcon}>
+            {SOUND_PROFILES[alarm.soundProfile]?.icon || '⚡'}
+          </Text>
+          <View style={styles.soundSummaryInfo}>
+            <Text style={styles.soundSummaryName}>
+              {SOUND_PROFILES[alarm.soundProfile]?.name || 'Shock & Awe'}
             </Text>
-          </TouchableOpacity>
+            <Text style={styles.soundSummaryVol}>
+              Volume: {Math.round((alarm.volume ?? 1.0) * 100)}%
+            </Text>
+          </View>
+          <Text style={styles.soundSummaryChevron}>{soundExpanded ? '▲' : '▼'}</Text>
+        </TouchableOpacity>
+
+        {soundExpanded && (
+          <>
+            <SegmentedPicker
+              options={Object.values(SOUND_PROFILES)}
+              value={alarm.soundProfile}
+              onChange={v => update('soundProfile', v)}
+            />
+            {alarm.soundProfile === 'custom' && (
+              <TouchableOpacity style={styles.card} onPress={handlePickCustomSound}>
+                <Text style={styles.fieldLabel}>Custom Sound</Text>
+                <Text style={styles.fieldValue}>
+                  {alarm.customSoundUri ? '✓ Sound selected' : 'Tap to pick audio file'}
+                </Text>
+              </TouchableOpacity>
+            )}
+            {/* Volume slider (discrete steps) */}
+            <View style={styles.card}>
+              <Text style={styles.fieldLabel}>Volume</Text>
+              <View style={styles.volumeRow}>
+                {[0.25, 0.5, 0.75, 1.0].map(v => (
+                  <TouchableOpacity
+                    key={v}
+                    style={[styles.volBtn, (alarm.volume ?? 1.0) >= v && styles.volBtnActive]}
+                    onPress={() => update('volume', v)}
+                  >
+                    <Text style={[styles.volBtnTxt, (alarm.volume ?? 1.0) >= v && styles.volBtnTxtActive]}>
+                      {Math.round(v * 100)}%
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+          </>
         )}
 
         {/* Wake Challenge */}
@@ -383,6 +424,29 @@ const styles = StyleSheet.create({
   },
   fieldHint: { fontSize: 11, color: COLORS.textDim, marginBottom: SPACING.sm },
   fieldValue: { fontSize: 15, color: COLORS.cyan },
+
+  soundSummaryRow: {
+    flexDirection: 'row', alignItems: 'center',
+    backgroundColor: COLORS.bgCard, borderRadius: RADIUS.lg,
+    padding: SPACING.md, marginBottom: SPACING.sm,
+    borderWidth: 1, borderColor: COLORS.border,
+    gap: SPACING.sm,
+  },
+  soundSummaryIcon: { fontSize: 24 },
+  soundSummaryInfo: { flex: 1 },
+  soundSummaryName: { fontSize: 15, fontWeight: '700', color: COLORS.text },
+  soundSummaryVol: { fontSize: 12, color: COLORS.textSecondary, marginTop: 2 },
+  soundSummaryChevron: { fontSize: 12, color: COLORS.textDim },
+
+  volumeRow: { flexDirection: 'row', gap: 8 },
+  volBtn: {
+    flex: 1, paddingVertical: SPACING.sm, borderRadius: RADIUS.md,
+    alignItems: 'center', borderWidth: 1, borderColor: COLORS.border,
+    backgroundColor: COLORS.bgElevated,
+  },
+  volBtnActive: { backgroundColor: COLORS.accent + '25', borderColor: COLORS.accent },
+  volBtnTxt: { fontSize: 12, fontWeight: '600', color: COLORS.textDim },
+  volBtnTxtActive: { color: COLORS.accent },
 
   textInput: {
     fontSize: 16, color: COLORS.text,
