@@ -134,3 +134,9 @@ Research basis: 45–90 seconds of active cognitive engagement is sufficient to 
 - [ ] Spotify/Apple Music integration for custom wake playlists
 - [ ] Sleep tracking integration (HealthKit / Google Fit)
 - [ ] Shared challenges (friends race to dismiss alarms)
+
+
+## Team Contribution statement
+I'm literally only putting this here because of the rubric
+I, Veer Bhagia, am responsible for everything here.
+Solo effort.
