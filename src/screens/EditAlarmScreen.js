@@ -54,6 +54,7 @@ export default function EditAlarmScreen({ route, navigation }) {
   const [showHourPicker, setShowHourPicker] = useState(false);
   const [showMinutePicker, setShowMinutePicker] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
   const [soundExpanded, setSoundExpanded] = useState(false);
 
   useEffect(() => {
@@ -81,11 +82,12 @@ export default function EditAlarmScreen({ route, navigation }) {
     await saveAlarm(alarm);
     if (alarm.enabled) await scheduleAlarm(alarm);
     else await cancelAlarm(alarm.id);
-    // Brief flash of feedback then go back
+    setSaving(false);
+    setSaved(true);
     setTimeout(() => {
-      setSaving(false);
+      setSaved(false);
       navigation.goBack();
-    }, 400);
+    }, 600);
   };
 
   const handlePickCustomSound = async () => {
@@ -121,9 +123,9 @@ export default function EditAlarmScreen({ route, navigation }) {
           <Text style={styles.cancelBtn}>Cancel</Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>{alarmId ? 'Edit Alarm' : 'New Alarm'}</Text>
-        <TouchableOpacity onPress={handleSave} disabled={saving}>
-          <Text style={[styles.saveBtn, saving && { opacity: 0.5 }]}>
-            {saving ? 'Saving...' : 'Save'}
+        <TouchableOpacity onPress={handleSave} disabled={saving || saved}>
+          <Text style={[styles.saveBtn, (saving || saved) && { opacity: 0.5 }]}>
+            {saving ? 'Saved' : 'Save'}
           </Text>
         </TouchableOpacity>
       </View>
