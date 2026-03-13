@@ -3,6 +3,7 @@
 **The alarm app that won't let you sleep in.**
 
 A React Native / Expo alarm app built around cognitive science and psychoacoustics to make waking up actually work.
+The ideaa is to create cognitive engagement to make it hard to go back to sleep, and easier to wake up, and get started on your day.
 
 ---
 
